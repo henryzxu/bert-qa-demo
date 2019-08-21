@@ -32,8 +32,9 @@ $('button#reset-btn').on('click', function() {
     $("#reset-context").hide();
     $("#question-input").hide();
     $(".history").show();
+    $("#history").prepend("<br>");
     $("#history").prepend($("#result").html());
-    $("#history").prepend(("<p>" + $("#context-data").html()  + "</p>").replace("hilite", ""));
+    $("#history").prepend($("#context-data").html().replace("hilite", ""));
     $("#history").prepend(("<h4>" + $("#context-title").html() + "</h4>").replace("hilite", ""));
     $("#context-title").html("");
     $("#context-data").html("");
@@ -51,23 +52,6 @@ $(function() {
 });
 
 function highlight(element, start, end) {
-    if (start > -1) {
-        var item = $(element);
-        var str = item.data("origHTML");
-        if (!str) {
-            str = item.html();
-            item.data("origHTML", str);
-        }
-        str = str.substr(0, start) +
-            '<span class="hilite">' +
-            str.substr(start, end - start + 1) +
-            '</span>' +
-            str.substr(end + 1);
-        item.html(str);
-    }
-}
-
-function restore(element, start, end) {
     if (start > -1) {
         var item = $(element);
         var str = item.data("origHTML");

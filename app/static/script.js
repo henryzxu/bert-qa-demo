@@ -1,24 +1,35 @@
 $(function() {
     $('button#process').on('click', function() {
       $.getJSON($SCRIPT_ROOT + '/_input_helper', {
-        question_data: $('#question_data').val()
+        question_data: $('#question-data').val()
       }, function(data) {
         $("#result").prepend(data.result);
+        var hilite = new Function(data.highlight_script);
+        hilite()
       });
       return false;
     });
   });
 
+$('textarea').each(function () {
+  this.setAttribute('style', 'height:' + (this.scrollHeight) + 'px;overflow-y:hidden;');
+}).on('input', function () {
+  this.style.height = 'auto';
+  this.style.height = (this.scrollHeight) + 'px';
+});
+
 $(function() {
     $('button#store-btn').on('click', function() {
       $.getJSON($SCRIPT_ROOT + '/_store_context', {
-        text_data: $('#text_data').val(),
+        text_data: $('#text-data').val(),
       }, function(data) {
           if (data.context) {
               $("#store-context").hide();
-              $("#text_data").val("");
+              $("#text-data").val("");
               $("#reset-context").show();
               $("#question-input").show();
+              $("#question-data").val("");
+              $('textarea').trigger('input');
               $("#context-title").html(data.title)
               $("#context-data").html(data.context)
           }
@@ -31,21 +42,33 @@ $('button#reset-btn').on('click', function() {
     $("#store-context").show();
     $("#reset-context").hide();
     $("#question-input").hide();
+
     $(".history").show();
-    $("#history").prepend("<br>");
-    $("#history").prepend($("#result").html());
-    $("#history").prepend($("#context-data").html().replace("hilite", ""));
-    $("#history").prepend(("<h4>" + $("#context-title").html() + "</h4>").replace("hilite", ""));
+
+    var hist = $("#history");
+    hist.prepend("<br>");
+    hist.prepend($("#result").html());
+    hist.prepend($("#context-data").html().replace('<span class="hilite">', "").replace('</span>', ""));
+    hist.prepend(("<h4>" + $("#context-title").html() + "</h4>").replace('<span class="hilite">', "").replace('</span>', ""));
+
     $("#context-title").html("");
     $("#context-data").html("");
     $("#result").html("");
+    $('textarea').trigger('input');
+});
+
+$('a#toggle-history').on('click', function() {
+    var hist_toggle = $('#toggle-history');
+    hist_toggle.text() === "(hide)" ? hist_toggle.text("(show)") : hist_toggle.text("(hide)");
+    $("#history").toggle();
 });
 
 $(function() {
     $('button#random-btn').on('click', function() {
       $.getJSON($SCRIPT_ROOT + '/_random_page', {
       }, function(data) {
-        $("#text_data").val(data.context);
+        $("#text-data").val(data.context);
+        $('textarea').trigger('input');
       });
       return false;
     });

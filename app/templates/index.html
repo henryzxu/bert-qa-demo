@@ -1,6 +1,9 @@
 {%  extends "layout.html" %}
 
 {% block body %}
+    <div class="container">
+
+
     <div class="intro">
     <h1>
         Q&A Demo
@@ -12,17 +15,19 @@
        <div id="store-context" class="context">
     <div class="wrapper">
 
-            <div class="top-full">
+            <div>
 
 
             <h4>Text</h4>
-            <textarea id=text_data placeholder="Enter title followed by context"></textarea>
+            <textarea id=text-data placeholder="Enter title followed by prompt separated by a new line. Prompt can consist of multiple paragraphs. Click on 'random' button below for sample input."></textarea>
             <button id="random-btn" class="btn btn-secondary">Random</button>
         </div>
 
+        <div >
+            <h5 class="or">Or</h5>
+        </div>
 
-
-        <div class="bottom-full">
+        <div >
             <h4 class="reduced-margin-h2">File Upload</h4>
             {{ dropzone.create(action='process_input') }}
             <button id="upload-btn" class="btn btn-secondary">Upload</button>
@@ -34,9 +39,7 @@
 
 
 
-        <div class="middle-middle">
-            <h5 class="or">Or</h5>
-        </div>
+
     </div>
 
             <button id="store-btn" class="btn btn-primary">Store Prompt</button>
@@ -54,7 +57,7 @@
 
         <div id="question-input" class="question hidden">
             <h4>Questions</h4>
-            <textarea id=question_data placeholder="Enter questions separated by a new line"></textarea>
+            <textarea id=question-data placeholder="Enter questions separated by a new line."></textarea>
             <button id="process" class="btn btn-primary">Submit</button>
         </div>
 
@@ -66,8 +69,9 @@
 
     </div>
     <div class="history hidden">
-    <h3>History</h3>
+    <h3> History <a id="toggle-history">(hide)</a></h3>
         <span id="history"></span>
     </div>
+        </div>
 
 {% endblock %}

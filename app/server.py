@@ -32,7 +32,7 @@ dropzone = Dropzone(app)
 def delay_func(func):
     def inner(*args, **kwargs):
         returned_value = func(*args, **kwargs)
-        time.sleep(2)
+        time.sleep(0)
         return returned_value
     return inner
 
@@ -105,6 +105,7 @@ def package_squad_prediction(prediction, squad_dict, id="context-default"):
     prediction, dt = prediction
     squad_dict = squad_dict["data"]
     packaged_predictions = []
+    highlight_script = ""
     for entry in squad_dict:
         title = entry["title"]
         inner_package = []
@@ -112,12 +113,14 @@ def package_squad_prediction(prediction, squad_dict, id="context-default"):
             context = p["context"]
             qas = [(q["question"], prediction[q["id"]][0],
                     datetime.datetime.now().strftime("%d %B %Y %I:%M%p"),
-                    "Execution time: %0.02f seconds" % (dt),
+                    "%0.02f seconds" % (dt),
                     '#' + id,
                     generate_highlight(context, id, prediction[q["id"]][1], prediction[q["id"]][2])) for q in p["qas"]]
+            if not highlight_script:
+                highlight_script = qas[0][5]
             inner_package.append((context, qas))
         packaged_predictions.append((title, inner_package))
-    return packaged_predictions
+    return packaged_predictions, highlight_script
 
 def generate_highlight(context, id, start_index, stop_index):
     if start_index > -1:
@@ -131,7 +134,7 @@ def evaluate_input(predict_file, passthrough=False):
     t = time.time()
     predictions = evaluate(args, model, tokenizer)
     dt = time.time() - t
-    app.logger.info("Execution time: %0.02f seconds" % (dt))
+    app.logger.info("Loading time: %0.02f seconds" % (dt))
     if passthrough:
         return predictions, predict_file, dt
     return predictions, dt
@@ -145,11 +148,12 @@ def input_helper():
     # print(text)
     questions = unquote(request.args.get("question_data", "", type=str)).strip()
     app.logger.info("input text: {}\n\nquestions:{}".format(text, questions))
+    predictions, highlight = predict_from_input_squad(text, questions, id)
     if text and questions:
         return jsonify(result=
                        render_template('live_results.html',
-                                       file_urls=[text],
-                                       predict=lambda x: predict_from_input_squad(text, questions, id)))
+                                       predict=predictions),
+                       highlight_script=highlight)
     return jsonify(result="")
     # else:
     #     if "file_urls" not in session or session['file_urls'] == []:
@@ -161,8 +165,8 @@ def input_helper():
     #                    render_template('results.html',
     #                                    file_urls=file_urls,
     #                                    predict=predict_from_file_squad))
-
 @app.route('/_store_context')
+@delay_func
 def store_context():
     text = unquote(request.args.get("text_data", "", type=str)).strip()
     app.logger.info("input text: {}".format(text))

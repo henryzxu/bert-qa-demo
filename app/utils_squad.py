@@ -106,10 +106,10 @@ class InputFeatures(object):
         self.is_impossible = is_impossible
 
 
-def read_squad_examples(input_file, version_2_with_negative):
+def read_squad_examples(input_data, version_2_with_negative):
     """Read a SQuAD json file into a list of SquadExample."""
-    with open(input_file, "r", encoding='utf-8') as reader:
-        input_data = json.load(reader)["data"]
+
+    input_data = input_data["data"]
 
     def is_whitespace(c):
         if c == " " or c == "\t" or c == "\r" or c == "\n" or ord(c) == 0x202F:
@@ -594,15 +594,15 @@ def write_predictions(all_examples, all_features, all_results, n_best_size,
                                                    best_non_null_entry.end)
         all_nbest_json[example.qas_id] = nbest_json
 
-    with open(output_prediction_file, "w") as writer:
-        writer.write(json.dumps(all_predictions, indent=4) + "\n")
-
-    with open(output_nbest_file, "w") as writer:
-        writer.write(json.dumps(all_nbest_json, indent=4) + "\n")
-
-    if version_2_with_negative:
-        with open(output_null_log_odds_file, "w") as writer:
-            writer.write(json.dumps(scores_diff_json, indent=4) + "\n")
+    # with open(output_prediction_file, "w") as writer:
+    #     writer.write(json.dumps(all_predictions, indent=4) + "\n")
+    #
+    # with open(output_nbest_file, "w") as writer:
+    #     writer.write(json.dumps(all_nbest_json, indent=4) + "\n")
+    #
+    # if version_2_with_negative:
+    #     with open(output_null_log_odds_file, "w") as writer:
+    #         writer.write(json.dumps(scores_diff_json, indent=4) + "\n")
 
     return all_predictions
 
@@ -616,7 +616,7 @@ RawResultExtended = collections.namedtuple("RawResultExtended",
 def write_predictions_extended(all_examples, all_features, all_results, n_best_size,
                                 max_answer_length, output_prediction_file,
                                 output_nbest_file,
-                                output_null_log_odds_file, orig_data_file,
+                                output_null_log_odds_file,
                                 start_n_top, end_n_top, version_2_with_negative,
                                 tokenizer, verbose_logging):
     """ XLNet write prediction logic (more complex than Bert's).
@@ -780,15 +780,15 @@ def write_predictions_extended(all_examples, all_features, all_results, n_best_s
 
         all_nbest_json[example.qas_id] = nbest_json
 
-    with open(output_prediction_file, "w") as writer:
-        writer.write(json.dumps(all_predictions, indent=4) + "\n")
-
-    with open(output_nbest_file, "w") as writer:
-        writer.write(json.dumps(all_nbest_json, indent=4) + "\n")
-
-    if version_2_with_negative:
-        with open(output_null_log_odds_file, "w") as writer:
-            writer.write(json.dumps(scores_diff_json, indent=4) + "\n")
+    # with open(output_prediction_file, "w") as writer:
+    #     writer.write(json.dumps(all_predictions, indent=4) + "\n")
+    #
+    # with open(output_nbest_file, "w") as writer:
+    #     writer.write(json.dumps(all_nbest_json, indent=4) + "\n")
+    #
+    # if version_2_with_negative:
+    #     with open(output_null_log_odds_file, "w") as writer:
+    #         writer.write(json.dumps(scores_diff_json, indent=4) + "\n")
 
 
     return all_predictions

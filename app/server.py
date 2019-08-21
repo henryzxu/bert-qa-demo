@@ -6,13 +6,12 @@ from flask import Flask, request, jsonify, render_template, session, url_for, re
 from flask_dropzone import Dropzone
 import time
 from urllib.parse import unquote
-import wikipedia
 import os
 import uuid
 import secrets
 
 from run_squad import initialize, evaluate
-from data.squad_generator import convert_text_input_to_squad, \
+from squad_generator import convert_text_input_to_squad, \
     convert_file_input_to_squad, convert_context_and_questions_to_squad
 from settings import *
 import requests
@@ -58,7 +57,7 @@ def process_input():
             file = request.files.get(f)
             app.logger.info("file upload {}".format(file.filename))
             os.makedirs("./uploads", exist_ok=True)
-            filepath = os.path.join('./uploads', file.filename)
+            filepath = os.path.join('./uploads', secrets.token_urlsafe(8))
             file.save(filepath)
             file_urls.append(filepath)
         return "upload"
@@ -92,26 +91,25 @@ def random_page():
 
 
 def predict_from_text_squad(input):
-    squad_dict = convert_text_input_to_squad(input, gen_file)
-    return package_squad_prediction(evaluate_input(gen_file), squad_dict)
+    squad_dict = convert_text_input_to_squad(input)
+    return package_squad_prediction(squad_dict)
 
 def predict_from_file_squad(input):
     try:
-        squad_dict = convert_file_input_to_squad(input, gen_file)
+        squad_dict = convert_file_input_to_squad(input)
     except AssertionError:
         return []
-    return package_squad_prediction(evaluate_input(gen_file), squad_dict)
+    return package_squad_prediction(squad_dict)
 
 def predict_from_input_squad(context, questions, id):
-    squad_dict = convert_context_and_questions_to_squad(context, questions, gen_file)
-    return package_squad_prediction(evaluate_input(gen_file), squad_dict, id)
+    squad_dict = convert_context_and_questions_to_squad(context, questions)
+    return package_squad_prediction(squad_dict, id)
 
-def package_squad_prediction(prediction, squad_dict, id="context-default"):
-    prediction, dt = prediction
-    squad_dict = squad_dict["data"]
+def package_squad_prediction(squad_dict, id="context-default"):
+    prediction, dt = evaluate_input(squad_dict)
     packaged_predictions = []
     highlight_script = ""
-    for entry in squad_dict:
+    for entry in squad_dict["data"]:
         title = entry["title"]
         inner_package = []
         for p in entry["paragraphs"]:
@@ -134,14 +132,14 @@ def generate_highlight(context, id, start_index, stop_index):
         stop_index = len(" ".join(context_split[:stop_index + 1]))
     return 'highlight(' + '"#' + id + '",' + str(start_index) + ',' + str(stop_index) + ');return false;'
 
-def evaluate_input(predict_file, passthrough=False):
-    args.predict_file = predict_file
+def evaluate_input(squad_dict, passthrough=False):
+    args.input_data = squad_dict
     t = time.time()
     predictions = evaluate(args, model, tokenizer)
     dt = time.time() - t
     app.logger.info("Loading time: %0.02f seconds" % (dt))
     if passthrough:
-        return predictions, predict_file, dt
+        return predictions, squad_dict, dt
     return predictions, dt
 
 @app.route('/_input_helper')
@@ -176,6 +174,7 @@ def store_context():
     text = unquote(request.args.get("text_data", "", type=str)).strip()
     app.logger.info("input text: {}".format(text))
 
+    remove_files = False
     if not text:
         if "file_urls" not in session or session['file_urls'] == []:
             return redirect(url_for('index'))
@@ -183,6 +182,10 @@ def store_context():
         session.pop('file_urls', None)
         with open(file_urls[-1], "r") as f:
             text = f.read()
+        for f in file_urls:
+            if os.path.exists(f):
+                os.remove(f)
+        remove_files = True
 
     if text:
         # if "context" not in session:
@@ -196,7 +199,8 @@ def store_context():
             return jsonify(title=split_text[0].strip(),
                            context=render_template("unique_context.html",
                                                     unique_id=curr_id,
-                                                    content=re.sub("\n+", "\n", split_text[1].strip())))
+                                                    content=re.sub("\n+", "\n", split_text[1].strip())),
+                           clear_files=remove_files)
         else:
             return jsonify(context="")
 

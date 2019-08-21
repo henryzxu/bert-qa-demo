@@ -123,7 +123,7 @@ def evaluate(args, model, tokenizer, prefix=""):
         # XLNet uses a more complex post-processing procedure
         return write_predictions_extended(examples, features, all_results, args.n_best_size,
                         args.max_answer_length, output_prediction_file,
-                        output_nbest_file, output_null_log_odds_file, args.predict_file,
+                        output_nbest_file, output_null_log_odds_file,
                         model.config.start_n_top, model.config.end_n_top,
                         args.version_2_with_negative, tokenizer, args.verbose_logging)
     else:
@@ -135,26 +135,14 @@ def evaluate(args, model, tokenizer, prefix=""):
 
 
 def load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=False):
-    # Load data features from cache or dataset file
-    input_file = args.predict_file
-    cached_features_file = os.path.join(os.path.dirname(input_file), 'cached_{}_{}_{}'.format(
-        'dev' if evaluate else 'train',
-        list(filter(None, args.model_name_or_path.split('/'))).pop(),
-        str(args.max_seq_length)))
-    if os.path.exists(cached_features_file) and not args.overwrite_cache and not output_examples:
-        logger.info("Loading features from cached file %s", cached_features_file)
-        features = torch.load(cached_features_file)
-    else:
-        logger.info("Creating features from dataset file at %s", input_file)
-        examples = read_squad_examples(input_file=input_file,
-                                                version_2_with_negative=args.version_2_with_negative)
-        features = convert_examples_to_features(examples=examples,
-                                                tokenizer=tokenizer,
-                                                max_seq_length=args.max_seq_length,
-                                                doc_stride=args.doc_stride,
-                                                max_query_length=args.max_query_length)
-        logger.info("Saving features into cached file %s", cached_features_file)
-        torch.save(features, cached_features_file)
+
+    examples = read_squad_examples(input_data=args.input_data,
+                                            version_2_with_negative=args.version_2_with_negative)
+    features = convert_examples_to_features(examples=examples,
+                                            tokenizer=tokenizer,
+                                            max_seq_length=args.max_seq_length,
+                                            doc_stride=args.doc_stride,
+                                            max_query_length=args.max_query_length)
 
     # Convert to Tensors and build dataset
     all_input_ids = torch.tensor([f.input_ids for f in features], dtype=torch.long)
@@ -182,8 +170,6 @@ def initialize():
     parser = argparse.ArgumentParser()
 
     ## Required parameters
-    parser.add_argument("--predict_file", default=None, type=str,
-                        help="SQuAD json for predictions. E.g., dev-v1.1.json or test-v1.1.json")
     parser.add_argument("--model_type", default="bert", type=str,
                         help="Model type selected in the list: " + ", ".join(MODEL_CLASSES.keys()))
     parser.add_argument("--model_name_or_path", default="bert-large-uncased-whole-word-masking-finetuned-squad", type=str,
@@ -196,7 +182,7 @@ def initialize():
                         help="Pretrained config name or path if not the same as model_name")
     parser.add_argument("--tokenizer_name", default="bert-large-uncased", type=str,
                         help="Pretrained tokenizer name or path if not the same as model_name")
-    parser.add_argument("--cache_dir", default="./cache", type=str,
+    parser.add_argument("--cache_dir", default=None, type=str,
                         help="Where do you want to store the pre-trained models downloaded from s3")
 
     parser.add_argument('--version_2_with_negative', action='store_true',
@@ -212,8 +198,8 @@ def initialize():
     parser.add_argument("--max_query_length", default=64, type=int,
                         help="The maximum number of tokens for the question. Questions longer than this will "
                              "be truncated to this length.")
-    parser.add_argument("--do_lower_case", action='store_true',
-                        help="Set this flag if you are using an uncased model.")
+    parser.add_argument("--do_lower_case", default=True, action='store_false',
+                        help="Set this flag if you are using an cased model.")
 
     parser.add_argument("--per_gpu_eval_batch_size", default=8, type=int,
                         help="Batch size per GPU/CPU for evaluation.")
@@ -226,14 +212,8 @@ def initialize():
                         help="If true, all of the warnings related to data processing will be printed. "
                              "A number of warnings are expected for a normal SQuAD evaluation.")
 
-    parser.add_argument('--logging_steps', type=int, default=50,
-                        help="Log every X updates steps.")
     parser.add_argument("--no_cuda", action='store_true',
                         help="Whether not to use CUDA when available")
-    parser.add_argument('--overwrite_output_dir', action='store_true',
-                        help="Overwrite the content of the output directory")
-    parser.add_argument('--overwrite_cache', action='store_true',
-                        help="Overwrite the cached training and evaluation sets")
     parser.add_argument('--seed', type=int, default=42,
                         help="random seed for initialization")
 

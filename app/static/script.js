@@ -30,8 +30,11 @@ $(function() {
               $("#question-input").show();
               $("#question-data").val("");
               $('textarea').trigger('input');
-              $("#context-title").html(data.title)
-              $("#context-data").html(data.context)
+              $("#context-title").html(data.title);
+              $("#context-data").html(data.context);
+              if (data.clear_files) {
+                  dz.removeAllFiles();
+              }
           }
       });
       return false;

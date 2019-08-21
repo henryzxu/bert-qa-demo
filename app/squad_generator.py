@@ -26,7 +26,7 @@ def create_para_dict(example_dicts, title=""):
     return {"title": title,
             "paragraphs": example_dicts}
 
-def convert_file_input_to_squad(input_file, output_file):
+def convert_file_input_to_squad(input_file, output_file=None):
     with open(input_file, "r") as f:
         raw_text = f.read()
     return convert_text_input_to_squad(raw_text, output_file)
@@ -45,7 +45,7 @@ def validate_squad_input(input):
     return True
 
 
-def convert_text_input_to_squad(raw_text, output_file):
+def convert_text_input_to_squad(raw_text, output_file=None):
 
     raw_text = raw_text.strip()
 
@@ -74,12 +74,13 @@ def convert_text_input_to_squad(raw_text, output_file):
         )
         count += len(questions)
 
-    with open(output_file, "w+") as f:
-        json.dump(squad_dict, f)
+    if output_file:
+        with open(output_file, "w+") as f:
+            json.dump(squad_dict, f)
 
     return squad_dict
 
-def convert_context_and_questions_to_squad(context, questions, output_file):
+def convert_context_and_questions_to_squad(context, questions, output_file=None):
 
     squad_dict = {"data": []}
     count = 0
@@ -99,8 +100,9 @@ def convert_context_and_questions_to_squad(context, questions, output_file):
     )
 
 
-    with open(output_file, "w+") as f:
-        json.dump(squad_dict, f)
+    if output_file:
+        with open(output_file, "w+") as f:
+            json.dump(squad_dict, f)
 
     return squad_dict
 

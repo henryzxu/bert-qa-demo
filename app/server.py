@@ -1,5 +1,6 @@
 # flask_app/server.py​
 import datetime
+import re
 
 from flask import Flask, request, jsonify, render_template, session, url_for, redirect
 from flask_dropzone import Dropzone
@@ -125,8 +126,8 @@ def package_squad_prediction(prediction, squad_dict, id="context-default"):
 def generate_highlight(context, id, start_index, stop_index):
     if start_index > -1:
         context_split = context.split()
-        start_index = len(" ".join(context_split[:start_index]))
-        stop_index = len(" ".join(context_split[:stop_index + 1]))
+        start_index = len(" ".join(context_split[:start_index])) + 1
+        stop_index = len(" ".join(context_split[:stop_index + 1])) 
     return 'highlight(' + '"#' + id + '",' + str(start_index) + ',' + str(stop_index) + ');return false;'
 
 def evaluate_input(predict_file, passthrough=False):
@@ -188,9 +189,10 @@ def store_context():
             curr_id = str(uuid.uuid4().hex[:8])
             session['context'].append((text, curr_id))
             session.modified = True
-            return jsonify(title=split_text[0].strip(), context=render_template("unique_context.html",
-                                                                                unique_id=curr_id,
-                                                                                content=split_text[1].strip()))
+            return jsonify(title=split_text[0].strip(),
+                           context=render_template("unique_context.html",
+                                                    unique_id=curr_id,
+                                                    content=re.sub("\n+", "\n", split_text[1].strip())))
         else:
             return jsonify(context="")
 

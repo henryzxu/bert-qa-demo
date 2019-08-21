@@ -9,10 +9,9 @@ body {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-column-gap: 50px;
-  grid-row-gap: 10px;
   grid-auto-rows: minmax(100px, auto);
-  margin: 10px;
-  padding: 10px;
+  margin-bottom: 30px;
+  /*padding: 10px;*/
 }
 
 /*
@@ -57,13 +56,7 @@ div.about {
      -moz-border-radius: 6px;
           border-radius: 6px;
 }
-h2 {
-  font-size: 3em;
-  margin-top: 40px;
-  text-align: left;
-  letter-spacing: -2px;
-}
-h3 {
+h5 {
   font-size: 1.7em;
   font-weight: 100;
   margin-top: 30px;
@@ -99,6 +92,11 @@ textarea {
 
 .top-left {
 grid-column: 1/3;
+  grid-row: 1;
+}
+
+.top-full {
+grid-column: 1/4;
   grid-row: 1;
 }
 
@@ -138,7 +136,11 @@ grid-column: 3;
   grid-row: 1;
 }
 .squad-results {
+padding: 10px;
+}
 
+.history {
+  padding: 10px;
 }
 
 .reduced-margin-h2 {
@@ -173,3 +175,27 @@ margin: 0px;
   height: 2px;
 }
 
+.hidden {
+  display: none;
+}
+
+.context {
+  padding: 10px;
+}
+.question {
+  padding: 10px;
+}
+
+#reset-btn {
+  margin-bottom: 10px;
+}
+
+.context-display {
+    white-space: pre-wrap;
+}
+
+.answer-list {
+  margin: 0;
+}
+
+.hilite {color: dodgerblue;}

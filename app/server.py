@@ -1,4 +1,5 @@
 # flask_app/server.py​
+import datetime
 
 from flask import Flask, request, jsonify, render_template, session, url_for, redirect
 from flask_dropzone import Dropzone
@@ -6,6 +7,7 @@ import time
 from urllib.parse import unquote
 import wikipedia
 import os
+import uuid
 
 from run_squad import initialize, evaluate
 from data.squad_generator import convert_text_input_to_squad, \
@@ -19,11 +21,19 @@ args, model, tokenizer = initialize()
 
 app = Flask(__name__)
 
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 app.config['DROPZONE_UPLOAD_MULTIPLE'] = True
 app.config['DROPZONE_ALLOWED_FILE_TYPE'] = 'text'
 app.config['SECRET_KEY'] = 'supersecret'
 
 dropzone = Dropzone(app)
+
+def delay_func(func):
+    def inner(*args, **kwargs):
+        returned_value = func(*args, **kwargs)
+        time.sleep(2)
+        return returned_value
+    return inner
 
 @app.route("/")
 def index():
@@ -62,8 +72,7 @@ def random_page():
         res_sum = res.summary
     except wikipedia.exceptions.DisambiguationError as e:
         return random_page()
-    return jsonify(context='\n'.join([res_title, res_sum]),
-                   question="What is {}?".format(res_title))
+    return jsonify(context='\n'.join([res_title, res_sum]))
 
 
 
@@ -78,11 +87,12 @@ def predict_from_file_squad(input):
         return []
     return package_squad_prediction(evaluate_input(gen_file), squad_dict)
 
-def predict_from_input_squad(context, questions):
+def predict_from_input_squad(context, questions, id):
     squad_dict = convert_context_and_questions_to_squad(context, questions, gen_file)
-    return package_squad_prediction(evaluate_input(gen_file), squad_dict)
+    return package_squad_prediction(evaluate_input(gen_file), squad_dict, id)
 
-def package_squad_prediction(prediction, squad_dict):
+def package_squad_prediction(prediction, squad_dict, id="context-default"):
+    prediction, dt = prediction
     squad_dict = squad_dict["data"]
     packaged_predictions = []
     for entry in squad_dict:
@@ -90,12 +100,21 @@ def package_squad_prediction(prediction, squad_dict):
         inner_package = []
         for p in entry["paragraphs"]:
             context = p["context"]
-            qas = [(q["question"], prediction[q["id"]]) for q in p["qas"]]
+            qas = [(q["question"], prediction[q["id"]][0],
+                    datetime.datetime.now().strftime("%d %B %Y %I:%M%p"),
+                    "Execution time: %0.02f seconds" % (dt),
+                    '#' + id,
+                    generate_highlight(context, id, prediction[q["id"]][1], prediction[q["id"]][2])) for q in p["qas"]]
             inner_package.append((context, qas))
         packaged_predictions.append((title, inner_package))
     return packaged_predictions
 
-
+def generate_highlight(context, id, start_index, stop_index):
+    if start_index > -1:
+        context_split = context.split()
+        start_index = len(" ".join(context_split[:start_index]))
+        stop_index = len(" ".join(context_split[:stop_index + 1]))
+    return 'highlight(' + '"#' + id + '",' + str(start_index) + ',' + str(stop_index) + ');return false;'
 
 def evaluate_input(predict_file, passthrough=False):
     args.predict_file = predict_file
@@ -104,29 +123,63 @@ def evaluate_input(predict_file, passthrough=False):
     dt = time.time() - t
     app.logger.info("Execution time: %0.02f seconds" % (dt))
     if passthrough:
-        return predictions, predict_file
-    return predictions
+        return predictions, predict_file, dt
+    return predictions, dt
 
 @app.route('/_input_helper')
 def input_helper():
-    text = unquote(request.args.get("text_data", "", type=str)).strip()
+    # print(session['context'])
+    context = session['context'][-1]
+    text = context[0]
+    id = context[1]
+    # print(text)
     questions = unquote(request.args.get("question_data", "", type=str)).strip()
     app.logger.info("input text: {}\n\nquestions:{}".format(text, questions))
     if text and questions:
         return jsonify(result=
-                       render_template('results.html',
+                       render_template('live_results.html',
                                        file_urls=[text],
-                                       predict=lambda x: predict_from_input_squad(text, questions)))
-    else:
+                                       predict=lambda x: predict_from_input_squad(text, questions, id)))
+    return jsonify(result="")
+    # else:
+    #     if "file_urls" not in session or session['file_urls'] == []:
+    #         return redirect(url_for('index'))
+    #     file_urls = session['file_urls']
+    #     session.pop('file_urls', None)
+    #     app.logger.info("input file list: {}".format(file_urls))
+    #     return jsonify(result=
+    #                    render_template('results.html',
+    #                                    file_urls=file_urls,
+    #                                    predict=predict_from_file_squad))
+
+@app.route('/_store_context')
+def store_context():
+    text = unquote(request.args.get("text_data", "", type=str)).strip()
+    app.logger.info("input text: {}".format(text))
+
+    if not text:
         if "file_urls" not in session or session['file_urls'] == []:
             return redirect(url_for('index'))
         file_urls = session['file_urls']
         session.pop('file_urls', None)
-        app.logger.info("input file list: {}".format(file_urls))
-        return jsonify(result=
-                       render_template('results.html',
-                                       file_urls=file_urls,
-                                       predict=predict_from_file_squad))
+        with open(file_urls[-1], "r") as f:
+            text = f.read()
+
+    if text:
+        # if "context" not in session:
+        session['context'] = []
+        split_text = text.split("\n", 1)
+        if len(split_text) > 1:
+            # print(session['context'])
+            curr_id = str(uuid.uuid4().hex[:8])
+            session['context'].append((text, curr_id))
+            session.modified = True
+            return jsonify(title=split_text[0].strip(), context=render_template("unique_context.html",
+                                                                                unique_id=curr_id,
+                                                                                content=split_text[1].strip()))
+        else:
+            return jsonify(context="")
+
 
 
 if __name__ == '__main__':

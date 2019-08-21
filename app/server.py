@@ -9,6 +9,7 @@ from urllib.parse import unquote
 import wikipedia
 import os
 import uuid
+import secrets
 
 from run_squad import initialize, evaluate
 from data.squad_generator import convert_text_input_to_squad, \
@@ -27,7 +28,7 @@ app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 app.config['DROPZONE_UPLOAD_MULTIPLE'] = True
 app.config['DROPZONE_ALLOWED_FILE_TYPE'] = 'text'
 app.config.update(
-    SECRET_KEY=os.urandom(24),
+    SECRET_KEY=secrets.token_urlsafe(32),
     SESSION_COOKIE_NAME='InteractiveTransformer-WebSession'
 )
 

@@ -28,7 +28,6 @@ app.config['DROPZONE_UPLOAD_MULTIPLE'] = True
 app.config['DROPZONE_ALLOWED_FILE_TYPE'] = 'text'
 app.config.update(
     SECRET_KEY=os.urandom(24),
-    SESSION_COOKIE_SECURE=True,
     SESSION_COOKIE_NAME='InteractiveTransformer-WebSession'
 )
 
@@ -130,7 +129,7 @@ def package_squad_prediction(prediction, squad_dict, id="context-default"):
 def generate_highlight(context, id, start_index, stop_index):
     if start_index > -1:
         context_split = context.split()
-        start_index = len(" ".join(context_split[:start_index])) + 1
+        start_index = len(" ".join(context_split[:start_index]))
         stop_index = len(" ".join(context_split[:stop_index + 1]))
     return 'highlight(' + '"#' + id + '",' + str(start_index) + ',' + str(stop_index) + ');return false;'
 

@@ -1,71 +1,74 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Squad Demo</title>
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet"
-          integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
-          crossorigin="anonymous">
+{%  extends "layout.html" %}
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+{% block body %}
+    <h1>
+        Q&A Demo
+    </h1>
+    <p>
+    Live Q&A from a supplied prompt. Try a custom prompt or randomly generate one from Wikipedia.
+    </p>
+       <div id="store-context" class="context">
+    <div class="wrapper">
 
-    {{ dropzone.load_css() }}
-    {{ dropzone.style('border: 2px dashed #0087F7; min-height: 200px; max-width: 100%; margin-bottom:6px') }}
-</head>
-<body>
-<h1>
-    Squad Demo
-</h1>
-<div class="wrapper">
+            <div class="top-full">
 
-    <div class="top-left">
-        <h4>Text</h4>
-    <textarea id=text_data placeholder="Enter title followed by context"></textarea>
-        <button id="random-btn" class="btn btn-secondary">Random</button>
-    </div>
 
-    <div class="bottom-full">
-<h4 class="reduced-margin-h2">File Upload</h4>
-    {{ dropzone.create(action='process_input') }}
-    <button id="upload-btn" class="btn btn-secondary">Upload</button>
+            <h4>Text</h4>
+            <textarea id=text_data placeholder="Enter title followed by context"></textarea>
+            <button id="random-btn" class="btn btn-secondary">Random</button>
+        </div>
 
-    {{ dropzone.load_js() }}
-      {{ dropzone.config(custom_init='dz = this;document.getElementById("upload-btn").addEventListener("click", function handler(e) {dz.processQueue();});',
+
+
+        <div class="bottom-full">
+            <h4 class="reduced-margin-h2">File Upload</h4>
+            {{ dropzone.create(action='process_input') }}
+            <button id="upload-btn" class="btn btn-secondary">Upload</button>
+
+            {{ dropzone.load_js() }}
+            {{ dropzone.config(custom_init='dz = this;document.getElementById("upload-btn").addEventListener("click", function handler(e) {dz.processQueue();});',
                      custom_options='autoProcessQueue: false, addRemoveLinks: true, parallelUploads: 20,') }}
+        </div>
+
+
+
+        <div class="middle-middle">
+            <h5 class="or">Or</h5>
+        </div>
+    </div>
+
+            <button id="store-btn" class="btn btn-primary">Store Prompt</button>
+
+    </div>
+
+    <div id="reset-context" class="hidden context">
+            <button id="reset-btn" class="btn btn-secondary">Reset Context</button>
+            <h4><div id="context-title" class="context-display"></div></h4>
+        <div id="context-data" class="context-display"></div>
+        <div id="context-tokenized" class="context-display hidden"></div>
     </div>
 
 
 
-    <div class="top-right">
-        <h4>Questions</h4>
-        <textarea id=question_data placeholder="Enter questions separated by a new line"></textarea>
+        <div id="question-input" class="question hidden">
+            <h4>Questions</h4>
+            <textarea id=question_data placeholder="Enter questions separated by a new line"></textarea>
+            <button id="process" class="btn btn-primary">Submit</button>
+        </div>
+
+
+    <div class="squad-results">
+
+
+        <br>
+        <div>
+                <span id=result></span>
+        </div>
+
     </div>
-<div class="middle-middle">
-    <h3 class="or">Or</h3>
-</div>
-</div>
-<div class="squad-results">
-
-<div class="evaluate">
-        <br><br>
-        <button id=process class="btn btn-primary">Evaluate</button>
+    <div class="history hidden">
+    <h3>History</h3>
+        <span id="history"></span>
     </div>
-<br>
-   <div>
-        <span id=result></span>
-    </div>
-</div>
 
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
-    <script>window.jQuery || document.write('<script src="{{
-        url_for('static', filename='jquery.js') }}">\x3C/script>')</script>
-    <script type=text/javascript>
-        $SCRIPT_ROOT = {{ request.script_root|tojson|safe }}; </script>
-
-    <script src="{{ url_for('static', filename='script.js') }}"> </script>
-<script src="{{ url_for('static', filename='pace.js') }}"> </script>
-
-</body>
-
-
-</html>
+{% endblock %}

@@ -1,0 +1,31 @@
+<ul class="answer-list">
+{% for file_url in file_urls %}
+     {% for packaged_prediction in predict(file_url) %}
+                    {% for context in packaged_prediction[1] %}
+
+                            {% for question in context[1] %}
+                            <li>
+                                <b>Q: </b>
+                                {{ question[0] }}
+                                <ul>
+                                    <li>
+                                        <b>A: </b>
+                                {{ question[1] }}
+                            </li>
+                                    <li>
+                                {{ question[2] }}
+                            </li>
+                                    <li>
+                                {{ question[3] }}
+                            </li>
+                                    <li>
+                                        <a href={{ question[4] }} onclick={{ question[5] }} >Show in text</a>
+
+                            </li>
+                                </ul>
+                            </li>
+                            {% endfor %}
+                    {% endfor %}
+    {% endfor %}
+{% endfor %}
+</ul>

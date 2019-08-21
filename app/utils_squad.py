@@ -488,7 +488,7 @@ def write_predictions(all_examples, all_features, all_results, n_best_size,
             reverse=True)
 
         _NbestPrediction = collections.namedtuple(  # pylint: disable=invalid-name
-            "NbestPrediction", ["text", "start_logit", "end_logit"])
+            "NbestPrediction", ["text", "start_logit", "end_logit", "start", "end"])
 
         seen_predictions = {}
         nbest = []
@@ -501,6 +501,7 @@ def write_predictions(all_examples, all_features, all_results, n_best_size,
                 orig_doc_start = feature.token_to_orig_map[pred.start_index]
                 orig_doc_end = feature.token_to_orig_map[pred.end_index]
                 orig_tokens = example.doc_tokens[orig_doc_start:(orig_doc_end + 1)]
+                # print(example.doc_tokens)
                 tok_text = " ".join(tok_tokens)
 
                 # De-tokenize WordPieces that have been split off.
@@ -519,13 +520,17 @@ def write_predictions(all_examples, all_features, all_results, n_best_size,
                 seen_predictions[final_text] = True
             else:
                 final_text = ""
+                orig_doc_start = 0
+                orig_doc_end = 0
                 seen_predictions[final_text] = True
 
             nbest.append(
                 _NbestPrediction(
                     text=final_text,
                     start_logit=pred.start_logit,
-                    end_logit=pred.end_logit))
+                    end_logit=pred.end_logit,
+                    start=orig_doc_start,
+                    end=orig_doc_end))
         # if we didn't include the empty option in the n-best, include it
         if version_2_with_negative:
             if "" not in seen_predictions:
@@ -533,19 +538,21 @@ def write_predictions(all_examples, all_features, all_results, n_best_size,
                     _NbestPrediction(
                         text="",
                         start_logit=null_start_logit,
-                        end_logit=null_end_logit))
+                        end_logit=null_end_logit,
+                        start=0,
+                        end=0))
                 
             # In very rare edge cases we could only have single null prediction.
             # So we just create a nonce prediction in this case to avoid failure.
             if len(nbest)==1:
                 nbest.insert(0,
-                    _NbestPrediction(text="empty", start_logit=0.0, end_logit=0.0))
+                    _NbestPrediction(text="empty", start_logit=0.0, end_logit=0.0, start=0, end=0))
 
         # In very rare edge cases we could have no valid predictions. So we
         # just create a nonce prediction in this case to avoid failure.
         if not nbest:
             nbest.append(
-                _NbestPrediction(text="empty", start_logit=0.0, end_logit=0.0))
+                _NbestPrediction(text="empty", start_logit=0.0, end_logit=0.0, start=0, end=0))
 
         assert len(nbest) >= 1
 
@@ -566,12 +573,14 @@ def write_predictions(all_examples, all_features, all_results, n_best_size,
             output["probability"] = probs[i]
             output["start_logit"] = entry.start_logit
             output["end_logit"] = entry.end_logit
+            output["start"] = entry.start
+            output["end"] = entry.end
             nbest_json.append(output)
 
         assert len(nbest_json) >= 1
 
         if not version_2_with_negative:
-            all_predictions[example.qas_id] = nbest_json[0]["text"]
+            all_predictions[example.qas_id] = (nbest_json[0]["text"], nbest_json[0]["start"], nbest_json[0]["end"])
         else:
             # predict "" iff the null score - the score of best non-null > threshold
             score_diff = score_null - best_non_null_entry.start_logit - (
@@ -580,7 +589,9 @@ def write_predictions(all_examples, all_features, all_results, n_best_size,
             if score_diff > null_score_diff_threshold:
                 all_predictions[example.qas_id] = ""
             else:
-                all_predictions[example.qas_id] = best_non_null_entry.text
+                all_predictions[example.qas_id] = (best_non_null_entry.text,
+                                                   best_non_null_entry.start,
+                                                   best_non_null_entry.end)
         all_nbest_json[example.qas_id] = nbest_json
 
     with open(output_prediction_file, "w") as writer:
@@ -779,18 +790,8 @@ def write_predictions_extended(all_examples, all_features, all_results, n_best_s
         with open(output_null_log_odds_file, "w") as writer:
             writer.write(json.dumps(scores_diff_json, indent=4) + "\n")
 
-    with open(orig_data_file, "r", encoding='utf-8') as reader:
-        orig_data = json.load(reader)["data"]
 
-    qid_to_has_ans = make_qid_to_has_ans(orig_data)
-    has_ans_qids = [k for k, v in qid_to_has_ans.items() if v]
-    no_ans_qids = [k for k, v in qid_to_has_ans.items() if not v]
-    exact_raw, f1_raw = get_raw_scores(orig_data, all_predictions)
-    out_eval = {}
-
-    find_all_best_thresh_v2(out_eval, all_predictions, exact_raw, f1_raw, scores_diff_json, qid_to_has_ans)
-
-    return out_eval
+    return all_predictions
 
 
 def get_final_text(pred_text, orig_text, do_lower_case, verbose_logging=False):

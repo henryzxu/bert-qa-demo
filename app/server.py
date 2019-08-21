@@ -13,6 +13,7 @@ from run_squad import initialize, evaluate
 from data.squad_generator import convert_text_input_to_squad, \
     convert_file_input_to_squad, convert_context_and_questions_to_squad
 from settings import *
+import requests
 
 os.makedirs(output_dir, exist_ok=True)
 
@@ -65,14 +66,23 @@ def process_input():
 
 @app.route("/_random_page")
 def random_page():
-    r = wikipedia.random(1)
-    try:
-        res = wikipedia.page(r)
-        res_title = res.title
-        res_sum = res.summary
-    except wikipedia.exceptions.DisambiguationError as e:
-        return random_page()
+    # r = wikipedia.random(1)
+    # try:
+    #     res = wikipedia.page(r)
+    #     res_title = res.title
+    #     res_sum = res.summary
+    # except wikipedia.exceptions.DisambiguationError as e:
+    #     return random_page()
+    # return jsonify(context='\n'.join([res_title, res_sum]))
+    if proxyDict:
+        r = requests.get("https://en.wikipedia.org/api/rest_v1/page/random/summary", proxies=proxyDict)
+    else:
+        r = requests.get("https://en.wikipedia.org/api/rest_v1/page/random/summary")
+    page = r.json()
+    res_title = page["title"]
+    res_sum = page["extract"]
     return jsonify(context='\n'.join([res_title, res_sum]))
+
 
 
 

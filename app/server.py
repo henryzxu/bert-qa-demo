@@ -16,8 +16,6 @@ from squad_generator import convert_text_input_to_squad, \
 from settings import *
 import requests
 
-os.makedirs(output_dir, exist_ok=True)
-
 # args, model, tokenizer = None, None, None
 args, model, tokenizer = initialize()
 

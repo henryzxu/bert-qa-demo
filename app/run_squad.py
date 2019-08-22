@@ -67,9 +67,6 @@ def to_list(tensor):
 def evaluate(args, model, tokenizer, prefix=""):
     dataset, examples, features = load_and_cache_examples(args, tokenizer, evaluate=True, output_examples=True)
 
-    if not os.path.exists(args.output_dir) and args.local_rank in [-1, 0]:
-        os.makedirs(args.output_dir)
-
     args.eval_batch_size = args.per_gpu_eval_batch_size
     # Note that DistributedSampler samples randomly
     eval_sampler = SequentialSampler(dataset) if args.local_rank == -1 else DistributedSampler(dataset)
@@ -111,25 +108,16 @@ def evaluate(args, model, tokenizer, prefix=""):
                                    end_logits   = to_list(outputs[1][i]))
             all_results.append(result)
 
-    # Compute predictions
-    output_prediction_file = os.path.join(args.output_dir, "predictions_{}.json".format(prefix))
-    output_nbest_file = os.path.join(args.output_dir, "nbest_predictions_{}.json".format(prefix))
-    if args.version_2_with_negative:
-        output_null_log_odds_file = os.path.join(args.output_dir, "null_odds_{}.json".format(prefix))
-    else:
-        output_null_log_odds_file = None
 
     if args.model_type in ['xlnet', 'xlm']:
         # XLNet uses a more complex post-processing procedure
         return write_predictions_extended(examples, features, all_results, args.n_best_size,
-                        args.max_answer_length, output_prediction_file,
-                        output_nbest_file, output_null_log_odds_file,
+                        args.max_answer_length,
                         model.config.start_n_top, model.config.end_n_top,
                         args.version_2_with_negative, tokenizer, args.verbose_logging)
     else:
         return write_predictions(examples, features, all_results, args.n_best_size,
-                        args.max_answer_length, args.do_lower_case, output_prediction_file,
-                        output_nbest_file, output_null_log_odds_file, args.verbose_logging,
+                        args.max_answer_length, args.do_lower_case, args.verbose_logging,
                         args.version_2_with_negative, args.null_score_diff_threshold)
 
 
@@ -174,8 +162,6 @@ def initialize():
                         help="Model type selected in the list: " + ", ".join(MODEL_CLASSES.keys()))
     parser.add_argument("--model_name_or_path", default="bert-large-uncased-whole-word-masking-finetuned-squad", type=str,
                         help="Path to pre-trained model or shortcut name selected in the list: " + ", ".join(ALL_MODELS))
-    parser.add_argument("--output_dir", default="./results", type=str,
-                        help="The output directory where the model checkpoints and predictions will be written.")
 
     ## Other parameters
     parser.add_argument("--config_name", default="", type=str,

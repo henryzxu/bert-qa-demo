@@ -403,12 +403,9 @@ RawResult = collections.namedtuple("RawResult",
                                    ["unique_id", "start_logits", "end_logits"])
 
 def write_predictions(all_examples, all_features, all_results, n_best_size,
-                      max_answer_length, do_lower_case, output_prediction_file,
-                      output_nbest_file, output_null_log_odds_file, verbose_logging,
+                      max_answer_length, do_lower_case, verbose_logging,
                       version_2_with_negative, null_score_diff_threshold):
-    """Write final predictions to the json file and log-odds of null if needed."""
-    logger.info("Writing predictions to: %s" % (output_prediction_file))
-    logger.info("Writing nbest to: %s" % (output_nbest_file))
+
 
     example_index_to_features = collections.defaultdict(list)
     for feature in all_features:
@@ -614,9 +611,7 @@ RawResultExtended = collections.namedtuple("RawResultExtended",
 
 
 def write_predictions_extended(all_examples, all_features, all_results, n_best_size,
-                                max_answer_length, output_prediction_file,
-                                output_nbest_file,
-                                output_null_log_odds_file,
+                                max_answer_length,
                                 start_n_top, end_n_top, version_2_with_negative,
                                 tokenizer, verbose_logging):
     """ XLNet write prediction logic (more complex than Bert's).
@@ -632,8 +627,6 @@ def write_predictions_extended(all_examples, all_features, all_results, n_best_s
     _NbestPrediction = collections.namedtuple(  # pylint: disable=invalid-name
         "NbestPrediction", ["text", "start_log_prob", "end_log_prob"])
 
-    logger.info("Writing predictions to: %s", output_prediction_file)
-    # logger.info("Writing nbest to: %s" % (output_nbest_file))
 
     example_index_to_features = collections.defaultdict(list)
     for feature in all_features:

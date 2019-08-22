@@ -1,8 +1,11 @@
 # Interactive Q&A Demo for BERT 
 ## Usage
-`pip install -r requirements.txt`  
-`export FLASK_APP=app/server.py`  
-`flask run`  
+```
+pip install -r requirements.txt    
+export FLASK_APP=app/server.py  
+flask run
+```
+
 Input priority is given to text-based prompts.
 ## Screenshots
 ### Home Page

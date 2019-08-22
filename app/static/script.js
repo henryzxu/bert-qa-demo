@@ -4,6 +4,7 @@ $(function() {
         question_data: $('#question-data').val()
       }, function(data) {
         $("#result").prepend(data.result);
+        $("#question-data").val("");
         var hilite = new Function(data.highlight_script);
         hilite()
       });

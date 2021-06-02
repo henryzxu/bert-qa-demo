@@ -25,5 +25,5 @@ soupsieve==1.9.2
 tensorboardX==1.8
 torch==1.1.0.post2
 tqdm==4.32.2
-urllib3==1.25.3
+urllib3==1.26.5
 Werkzeug==0.15.5
